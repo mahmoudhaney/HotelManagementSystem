@@ -97,6 +97,91 @@ class Room
     }
   }
 
+  def DisplayAvailableRooms(): Unit = {
+    Try {
+      val source = Source.fromFile(filePath)
+      // Print the data in a table format
+      source.getLines().foreach { line =>
+        val columns = line.split(" ")
+        if (columns.length == 4 && columns(3) == "false") {
+          printTableRow(columns)
+        }
+      }
+      source.close()
+    } match {
+      case Success(_) =>
+      case Failure(exception) => println(s"Error reading file: ${exception.getMessage}")
+    }
+
+    def printTableRow(columns: Array[String]): Unit = {
+      print("|")
+      columns.foreach { value =>
+        print(s" $value | ")
+      }
+      println()
+    }
+  }
+
+  // Check if a room is available
+  def isRoomAvailable(roomId: Int): Boolean = {
+    Try {
+      val source = Source.fromFile(filePath)
+      val available = source.getLines().exists { line =>
+        val columns = line.split(" ")
+        columns.length == 4 && columns(0).toInt == roomId && columns(3) == "false"
+      }
+      source.close()
+      available
+    } match {
+      case Success(result) => result
+      case Failure(exception) =>
+        println(s"Error checking room availability: ${exception.getMessage}")
+        false
+    }
+  }
+
+  def getRoomPrice(roomId: Int): Option[Double] = {
+    Try {
+      val source = Source.fromFile(filePath)
+      val priceOption = source.getLines().collectFirst {
+        case line if line.startsWith(s"$roomId ") =>
+          line.split(" ").lift(2).map(_.toDouble)
+      }
+      source.close()
+      priceOption.flatten
+    } match {
+      case Success(result) => result
+      case Failure(exception) =>
+        println(s"Error getting room price: ${exception.getMessage}")
+        None
+    }
+  }
+
+  def updateRoomOccupancy(roomId: Int, isOccupied: Boolean): Unit = {
+    Try {
+      val source = Source.fromFile(filePath)
+      val lines = source.getLines().map { line =>
+        val columns = line.split(" ")
+        if (columns.length == 4 && columns(0).toInt == roomId) {
+          s"${columns(0)} ${columns(1)} ${columns(2)} $isOccupied"
+        } else {
+          line
+        }
+      }.mkString("\n")
+      source.close()
+
+      val writer = new PrintWriter(new BufferedWriter(new FileWriter(filePath)))
+      try {
+        writer.print(lines)
+      } finally {
+        writer.close()
+      }
+    } match {
+      case Success(_) => println(s"Room with ID $roomId marked as occupied.")
+      case Failure(exception) => println(s"Error updating room occupancy: ${exception.getMessage}")
+    }
+  }
+
   def Display(): Unit = {
     Try {
       val source = Source.fromFile(filePath)
