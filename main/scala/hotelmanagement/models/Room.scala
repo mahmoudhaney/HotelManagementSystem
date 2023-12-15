@@ -27,7 +27,7 @@ class Room
   // --------------------- Class Methods ---------------------
   def does_room_exist(roomId: Int): Boolean = {
     Try {
-      val source = Source.fromFile(filePath)
+      val source = Source.fromFile(this.filePath)
       val exists = source.getLines().exists(line => line.split(" ")(0).toInt == roomId)
       source.close()
       exists
@@ -55,7 +55,7 @@ class Room
 
   def updateRoomById(roomId: Int, updatedRoom: Room): Unit = {
     Try {
-      val source = Source.fromFile(filePath)
+      val source = Source.fromFile(this.filePath)
       val lines = source.getLines().map { line =>
         val columns = line.split(" ")
         if (columns(0).toInt == roomId) {
@@ -67,7 +67,7 @@ class Room
       }.mkString("\n")
       source.close()
 
-      val writer = new PrintWriter(new BufferedWriter(new FileWriter(filePath)))
+      val writer = new PrintWriter(new BufferedWriter(new FileWriter(this.filePath)))
       try {
         writer.print(lines)
       } finally {
@@ -81,11 +81,11 @@ class Room
 
   def deleteRoomById(roomId: Int): Unit = {
     Try {
-      val source = Source.fromFile(filePath)
+      val source = Source.fromFile(this.filePath)
       val lines = source.getLines().filterNot(line => line.split(" ")(0).toInt == roomId).mkString("\n")
       source.close()
 
-      val writer = new PrintWriter(new BufferedWriter(new FileWriter(filePath)))
+      val writer = new PrintWriter(new BufferedWriter(new FileWriter(this.filePath)))
       try {
         writer.print(lines)
       } finally {
@@ -97,35 +97,12 @@ class Room
     }
   }
 
-  def DisplayAvailableRooms(): Unit = {
-    Try {
-      val source = Source.fromFile(filePath)
-      // Print the data in a table format
-      source.getLines().foreach { line =>
-        val columns = line.split(" ")
-        if (columns.length == 4 && columns(3) == "false") {
-          printTableRow(columns)
-        }
-      }
-      source.close()
-    } match {
-      case Success(_) =>
-      case Failure(exception) => println(s"Error reading file: ${exception.getMessage}")
-    }
 
-    def printTableRow(columns: Array[String]): Unit = {
-      print("|")
-      columns.foreach { value =>
-        print(s" $value | ")
-      }
-      println()
-    }
-  }
 
   // Check if a room is available
   def isRoomAvailable(roomId: Int): Boolean = {
     Try {
-      val source = Source.fromFile(filePath)
+      val source = Source.fromFile(this.filePath)
       val available = source.getLines().exists { line =>
         val columns = line.split(" ")
         columns.length == 4 && columns(0).toInt == roomId && columns(3) == "false"
@@ -142,7 +119,7 @@ class Room
 
   def getRoomPrice(roomId: Int): Option[Double] = {
     Try {
-      val source = Source.fromFile(filePath)
+      val source = Source.fromFile(this.filePath)
       val priceOption = source.getLines().collectFirst {
         case line if line.startsWith(s"$roomId ") =>
           line.split(" ").lift(2).map(_.toDouble)
@@ -159,7 +136,7 @@ class Room
 
   def updateRoomOccupancy(roomId: Int, isOccupied: Boolean): Unit = {
     Try {
-      val source = Source.fromFile(filePath)
+      val source = Source.fromFile(this.filePath)
       val lines = source.getLines().map { line =>
         val columns = line.split(" ")
         if (columns.length == 4 && columns(0).toInt == roomId) {
@@ -170,21 +147,52 @@ class Room
       }.mkString("\n")
       source.close()
 
-      val writer = new PrintWriter(new BufferedWriter(new FileWriter(filePath)))
+      val writer = new PrintWriter(new BufferedWriter(new FileWriter(this.filePath)))
       try {
         writer.print(lines)
       } finally {
         writer.close()
       }
     } match {
-      case Success(_) => println(s"Room with ID $roomId marked as occupied.")
+      case Success(_) => println(s"Room Occupancy with ID $roomId updated successfully.")
       case Failure(exception) => println(s"Error updating room occupancy: ${exception.getMessage}")
+    }
+  }
+
+  def printTableRow(columns: Array[String]): Unit = {
+    print("|")
+    columns.foreach { value =>
+      print(s" $value | ")
+    }
+    println()
+  }
+
+  def printTableLine(header: String): Unit = {
+    val line = "+------" * header.split(" ").length + "+"
+    println(line)
+  }
+
+  def DisplayAvailableRooms(): Unit = {
+    Try {
+      val source = Source.fromFile(this.filePath)
+      // Print the data in a table format
+      source.getLines().foreach { line =>
+        val columns = line.split(" ")
+        if (columns.length == 4 && columns(3) == "false") {
+          printTableRow(columns)
+          printTableLine(line)
+        }
+      }
+      source.close()
+    } match {
+      case Success(_) =>
+      case Failure(exception) => println(s"Error reading file: ${exception.getMessage}")
     }
   }
 
   def Display(): Unit = {
     Try {
-      val source = Source.fromFile(filePath)
+      val source = Source.fromFile(this.filePath)
       // Print the data in a table format
       source.getLines().foreach { line =>
         val columns = line.split(" ")
@@ -196,21 +204,6 @@ class Room
       case Success(_) =>
       case Failure(exception) => println(s"Error reading file: ${exception.getMessage}")
     }
-
-    def printTableRow(columns: Array[String]): Unit = {
-      print("|")
-      columns.foreach { value =>
-        print(s" $value | ")
-      }
-      println()
-    }
-
-    // Function to print a line separating rows with borders
-    def printTableLine(header: String): Unit = {
-      val line = "+------" * header.split(" ").length + "+"
-      println(line)
-    }
-
   }
   // --------------------- Override toString ---------------------
   override def toString: String = s"Room(id=$id, roomType=$roomType, price=$price, isOccupied=$isOccupied)"

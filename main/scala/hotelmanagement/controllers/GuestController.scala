@@ -10,14 +10,11 @@ object GuestController {
 
   def check_in():Unit ={
     println("========== Checking-in ==========")
-    // Initialize the guest and room objects
     val guest = new Guest
     val room = new Room
 
-    // Display available rooms to the guest
     println("Available Rooms:")
     room.DisplayAvailableRooms()
-    // Get room details from user input
     print("Enter Room ID to book: ")
     val roomIdToBook = StdIn.readInt()
 
@@ -52,14 +49,12 @@ object GuestController {
     } else {
       println(s"Error: Room with ID $roomIdToBook is not available.")
     }
-
-
   }
 
   def check_out():Unit ={
     val room = new Room;
     val guest = new Guest;
-
+    println("========== Checking-out ==========")
     print("Enter Guest's Room ID: ")
     val roomID = StdIn.readInt()
     if (guest.does_guest_exist(roomID)) {
@@ -68,7 +63,6 @@ object GuestController {
       room.updateRoomOccupancy(roomID, isOccupied = false)
     } else {
       println(s"Error!!: Guest with Room ID ${roomID} does not exist.")
-
     }
   }
 
