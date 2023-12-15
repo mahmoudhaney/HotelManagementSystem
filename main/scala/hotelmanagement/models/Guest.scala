@@ -36,7 +36,7 @@ class Guest
   // --------------------- Class Methods ---------------------
   def does_guest_exist(roomId: Int): Boolean = {
     Try {
-      val source = Source.fromFile(filePath)
+      val source = Source.fromFile(this.filePath)
       val exists = source.getLines().exists(line => line.split(" ")(5).toInt == roomId)
       source.close()
       exists
@@ -50,7 +50,7 @@ class Guest
 
   def AddGuestToFile(new_guest: Guest, roomId: Int, roomPrice: Double): Unit = {
     Try {
-      val writer = new PrintWriter(new BufferedWriter(new FileWriter(filePath, true))) // 'true' for append mode
+      val writer = new PrintWriter(new BufferedWriter(new FileWriter(this.filePath, true))) // 'true' for append mode
       try {
         writer.println(s"${new_guest.name} ${new_guest.mobile} ${new_guest.gender} ${new_guest.idProof} ${new_guest.checkInDate} $roomId $roomPrice")
       } finally {
@@ -62,9 +62,26 @@ class Guest
     }
   }
 
+  def calculateTotalCost(checkinDate: LocalDate, roomPrice: Double): Double = {
+    val checkoutDate = LocalDate.now()
+    var daysStayed = java.time.temporal.ChronoUnit.DAYS.between(checkinDate, checkoutDate)
+    if (daysStayed == 0) daysStayed = 1
+    daysStayed * roomPrice
+  }
+
+  private def deleteGuestFromFile(roomId: Int, guests: List[String]): Unit = {
+    val updatedGuests = guests.filterNot(_.contains(s" $roomId "))
+    val writer = new PrintWriter(new BufferedWriter(new FileWriter(this.filePath)))
+    try {
+      updatedGuests.foreach(writer.println)
+    } finally {
+      writer.close()
+    }
+  }
+
   def checkout(roomId: Int): Unit = {
     Try {
-      val source = Source.fromFile(filePath)
+      val source = Source.fromFile(this.filePath)
       val guests = source.getLines().toList
       source.close()
 
@@ -76,42 +93,27 @@ class Guest
         val roomIdFromFile = guestInfo(5).toInt
         val roomPrice = guestInfo(6).toDouble
 
-        // Calculate the number of days stayed
-        val checkoutDate = LocalDate.now()
-        val daysStayed = java.time.temporal.ChronoUnit.DAYS.between(checkinDate, checkoutDate)
-
         // Calculate the total cost
-        val totalCost = daysStayed * roomPrice
+        val totalCost = calculateTotalCost(checkinDate, roomPrice)
 
         // Create a bill PDF
-        createBillPDF(guestName, guestMobile, checkinDate, checkoutDate, daysStayed, roomPrice, totalCost)
+        createBillPDF(guestName, guestMobile, checkinDate, LocalDate.now(), roomPrice, totalCost)
 
         // Delete the guest from the file
-        val updatedGuests = guests.filterNot(_.contains(s" $roomId "))
-        val writer = new PrintWriter(new BufferedWriter(new FileWriter(filePath)))
-        try {
-          updatedGuests.foreach(writer.println)
-        } finally {
-          writer.close()
-        }
-
-        println(s"Checkout successful for guest $guestName. Total cost: $totalCost")
+        deleteGuestFromFile(roomId, guests)
       }
     } match {
-      case Success(_) =>
+      case Success(_) => println(s"Checkout for room ID $roomId successfully done.")
       case Failure(exception) => println(s"Error during checkout: ${exception.getMessage}")
     }
   }
 
-  private def createBillPDF(
-                             guestName: String,
-                             guestMobile: String,
-                             checkinDate: LocalDate,
-                             checkoutDate: LocalDate,
-                             daysStayed: Long,
-                             roomPrice: Double,
-                             totalCost: Double
-                           ): Unit = {
+  private def openPDFFile(filePath: String): Unit = {
+    val file = new File(filePath)
+    Desktop.getDesktop.open(file)
+  }
+
+  private def createBillPDF(guestName: String, guestMobile: String, checkinDate: LocalDate, checkoutDate: LocalDate, roomPrice: Double, totalCost: Double): Unit = {
     val folderPath = "C:\\Users\\Mahmoud Haney\\IdeaProjects\\HotelManagementSystem\\src\\main\\scala\\hotelmanagement\\Bills\\"
     val filePath = s"${folderPath}bill_${guestName}_${checkinDate}_${checkoutDate}.pdf"
 
@@ -122,6 +124,9 @@ class Guest
     val titleFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 16, com.itextpdf.text.Font.BOLD)
     val bodyFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 12)
 
+    var daysStayed = java.time.temporal.ChronoUnit.DAYS.between(checkinDate, checkoutDate)
+    if(daysStayed == 0) daysStayed = 1;
+
     document.add(new Paragraph("Guest Bill", titleFont))
     document.add(new Paragraph(s"Guest Name: $guestName", bodyFont))
     document.add(new Paragraph(s"Mobile: $guestMobile", bodyFont))
@@ -130,6 +135,7 @@ class Guest
     document.add(new Paragraph(s"Days Stayed: $daysStayed", bodyFont))
     document.add(new Paragraph(s"Room Price: $roomPrice", bodyFont))
     document.add(new Paragraph(s"Total Cost: $totalCost", bodyFont))
+    document.add(new Paragraph("Thank you, Hope see again :)  :)", titleFont))
 
     document.close()
     pdfWriter.close()
@@ -138,8 +144,7 @@ class Guest
 
     // Open the saved PDF file
     try {
-      val file = new File(filePath)
-      Desktop.getDesktop.open(file)
+      openPDFFile(filePath)
     } catch {
       case e: Exception =>
         println(s"Error opening PDF: ${e.getMessage}")
