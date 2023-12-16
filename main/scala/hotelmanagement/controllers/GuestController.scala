@@ -1,14 +1,23 @@
 package hotelmanagement.controllers
-import hotelmanagement.models.{Room, Guest}
+import hotelmanagement.models.{Guest, Room}
 import java.time.LocalDate
 import scala.io.StdIn
+import akka.actor.ActorSystem
+import hotelmanagement.actors.{GuestActor, RoomActor}
 
 object GuestController {
+  private val system = ActorSystem("HotelManagementSystem")
+  private val guestActor = system.actorOf(GuestActor.props, "guestActor")
+  private val roomActor = system.actorOf(RoomActor.props, "roomActor")
+
   def show_guests():Unit ={
+    guestActor ! GuestActor.DisplayGuests
     new Guest().Display();
   }
 
   def check_in():Unit ={
+    guestActor ! GuestActor.CheckIn()
+    roomActor ! RoomActor.UpdateRoom()
     println("========== Checking-in ==========")
     val guest = new Guest
     val room = new Room
@@ -52,6 +61,8 @@ object GuestController {
   }
 
   def check_out():Unit ={
+    guestActor ! GuestActor.CheckOut()
+    roomActor ! RoomActor.UpdateRoom()
     val room = new Room;
     val guest = new Guest;
     println("========== Checking-out ==========")

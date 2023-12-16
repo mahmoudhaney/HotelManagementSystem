@@ -2,8 +2,13 @@ package hotelmanagement.controllers
 import hotelmanagement.models.Room
 import scala.util.control.Breaks.{break, breakable}
 import scala.io.StdIn
+import akka.actor.ActorSystem
+import hotelmanagement.actors.RoomActor
 
 object RoomController {
+  private val system = ActorSystem("HotelManagementSystem")
+  private val roomActor = system.actorOf(RoomActor.props, "roomActor")
+
   def menu():Unit ={
     print("---------- Rooms ----------\n")
     println("1- Show Rooms\n2- Add Room\n3- Update Room\n4- Delete Room\n5- Exit")
@@ -12,7 +17,8 @@ object RoomController {
 
   def new_room():Unit ={
     val new_room = new Room;
-    println("Room Data:")
+    roomActor ! RoomActor.AddRoom()
+    println("---> Room Data <---")
     print("Enter Room ID: ")
     new_room.id = StdIn.readInt()
     if (new_room.does_room_exist(new_room.id)) {
@@ -30,6 +36,7 @@ object RoomController {
   }
 
   def update_room():Unit ={
+    roomActor ! RoomActor.UpdateRoom()
     print("Enter Room ID to update: ")
     val roomIdToUpdate = StdIn.readInt()
 
@@ -50,6 +57,7 @@ object RoomController {
   }
 
   def delete_room():Unit ={
+    roomActor ! RoomActor.DeleteRoom()
     print("Enter Room ID to delete: ")
     val roomIdToDelete = StdIn.readInt()
     val room = new Room
@@ -70,7 +78,7 @@ object RoomController {
           print("Choose: ")
           var Choice = scala.io.StdIn.readInt()
 
-          if      (Choice == 1) new Room().Display()
+          if      (Choice == 1) {roomActor ! RoomActor.DisplayRooms; new Room().Display();}
           else if (Choice == 2) new_room()
           else if (Choice == 3) update_room()
           else if (Choice == 4) delete_room()

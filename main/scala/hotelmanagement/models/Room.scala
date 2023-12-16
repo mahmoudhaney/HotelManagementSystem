@@ -87,7 +87,7 @@ class Room
 
       val writer = new PrintWriter(new BufferedWriter(new FileWriter(this.filePath)))
       try {
-        writer.print(lines)
+        writer.println(lines)
       } finally {
         writer.close()
       }
