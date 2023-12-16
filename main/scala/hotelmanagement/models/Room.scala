@@ -49,7 +49,7 @@ class Room
       }
     }match {
       case Success(_) => println(s"Room with ID ${new_room.id} added successfully.")
-      case Failure(exception) => println(s"Error deleting room: ${exception.getMessage}")
+      case Failure(exception) => println(s"Error adding room: ${exception.getMessage}")
     }
   }
 

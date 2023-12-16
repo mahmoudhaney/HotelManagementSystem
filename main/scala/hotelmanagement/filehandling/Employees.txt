@@ -1,0 +1,5 @@
+1 Nader nader@gmail.com HR 3000.0
+2 Ahmed ahmed@gmail.com DEV 9000.0
+3 Noha noha@gmail.com IT 8000.0
+4 Omar omar@gmail.com IT 8000.0
+5 Malek malek@gmail.com AI 9000.0
